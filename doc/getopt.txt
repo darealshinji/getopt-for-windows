@@ -1,0 +1,181 @@
+GETOPT(3)                   Library Functions Manual                 GETOPT(3)
+
+NAME
+       getopt — get option character from command line argument list
+
+SYNOPSIS
+       #include <unistd.h>
+
+       extern char *optarg;
+       extern int opterr;
+       extern int optind;
+       extern int optopt;
+       extern int optreset;
+
+       int
+       getopt(int argc, char * const *argv, const char *optstring);
+
+DESCRIPTION
+       The getopt() function incrementally parses a command line argument list
+       argv  and returns the next known option character.  An option character
+       is known if it has been specified in  the  string  of  accepted  option
+       characters, optstring.
+
+       The  option  string optstring may contain the following elements: indi‐
+       vidual characters, characters followed by a colon, and characters  fol‐
+       lowed  by two colons.  A character followed by a single colon indicates
+       that an argument is to follow the option  on  the  command  line.   Two
+       colons  indicates  that the argument is optional - this is an extension
+       not covered by POSIX.  For example, an option string "x" recognizes  an
+       option  -x, and an option string "x:" recognizes an option and argument
+       -x argument.  It does not matter to getopt() if  a  following  argument
+       has  leading  whitespace;  except in the case where the argument is op‐
+       tional, denoted with two colons, no leading whitespace is permitted.
+
+       On return from getopt(), optarg points to an option argument, if it  is
+       anticipated,  and  the  variable  optind contains the index to the next
+       argv argument for a subsequent call to getopt().
+
+       The variables opterr and optind are both initialized to 1.  The  optind
+       variable  may  be  set  to  another value larger than 0 before a set of
+       calls to getopt() in order to skip over more or less argv entries.   An
+       optind value of 0 is reserved for compatibility with GNU getopt().
+
+       In  order to use getopt() to evaluate multiple sets of arguments, or to
+       evaluate a  single  set  of  arguments  multiple  times,  the  variable
+       optreset  must be set to 1 before the second and each additional set of
+       calls to getopt(), and the variable optind must be reinitialized.
+
+       The getopt() function returns -1 when the argument list  is  exhausted.
+       The  interpretation of options in the argument list may be cancelled by
+       the option ‘--’ (double dash) which causes getopt() to signal  the  end
+       of  argument  processing  and  return  -1.   When all options have been
+       processed (i.e., up to the first non-option argument), getopt() returns
+       -1.
+
+RETURN VALUES
+       The getopt() function  returns  the  next  known  option  character  in
+       optstring.   If  getopt() encounters a character not found in optstring
+       or if it detects a missing option argument, it  returns  ‘?’  (question
+       mark).   If  optstring has a leading ‘:’ then a missing option argument
+       causes ‘:’ to be returned instead of ‘?’.  In either case, the variable
+       optopt is set to the character that caused  the  error.   The  getopt()
+       function returns -1 when the argument list is exhausted.
+
+EXAMPLES
+       The  following  code accepts the options -b and -f argument and adjusts
+       argc and argv after option argument processing has completed.
+
+             int bflag, ch, fd;
+
+             bflag = 0;
+             while ((ch = getopt(argc, argv, "bf:")) != -1) {
+                     switch (ch) {
+                     case 'b':
+                             bflag = 1;
+                             break;
+                     case 'f':
+                             if ((fd = open(optarg, O_RDONLY)) == -1)
+                                     err(1, "%s", optarg);
+                             break;
+                     default:
+                             usage();
+                     }
+             }
+             argc -= optind;
+             argv += optind;
+
+DIAGNOSTICS
+       If the getopt() function encounters a character not found in the string
+       optstring or detects a missing option argument, it writes an error mes‐
+       sage to stderr and returns ‘?’.  Setting opterr to a zero will  disable
+       these  error  messages.   If optstring has a leading ‘:’ then a missing
+       option argument causes a ‘:’ to be returned in addition to  suppressing
+       any error messages.
+
+       Option  arguments are allowed to begin with ‘-’; this is reasonable but
+       reduces the amount of error checking possible.
+
+SEE ALSO
+       getopt(1), getopt_long(3), getsubopt(3)
+
+STANDARDS
+       The getopt() function implements a superset of the functionality speci‐
+       fied by IEEE Std 1003.1 (“POSIX.1”).
+
+       The following extensions are supported:
+
+       •   The optreset variable was added to make it  possible  to  call  the
+           getopt() function multiple times.
+
+       •   If  the optind variable is set to 0, getopt() will behave as if the
+           optreset variable has been set.  This is for compatibility with GNU
+           getopt().  New code should use optreset instead.
+
+       •   If the first character of optstring is a plus sign (‘+’),  it  will
+           be ignored.  This is for compatibility with GNU getopt().
+
+       •   If  the  first  character of optstring is a dash (‘-’), non-options
+           will be returned as arguments to the option character  ‘\1’.   This
+           is for compatibility with GNU getopt().
+
+       •   A  single  dash (‘-’) may be specified as a character in optstring,
+           however it should never have an argument associated with it.   This
+           allows  getopt() to be used with programs that expect ‘-’ as an op‐
+           tion flag.  This practice is wrong, and should not be used  in  any
+           current  development.   It  is  provided for backward compatibility
+           only.  Care should be taken not to use ‘-’ as the  first  character
+           in  optstring to avoid a semantic conflict with GNU getopt() seman‐
+           tics (see above).  By default, a single dash causes getopt() to re‐
+           turn -1.
+
+       Historic BSD versions of getopt() set optopt to the last option charac‐
+       ter  processed.   However,  this  conflicts  with   IEEE   Std   1003.1
+       (“POSIX.1”)  which  stipulates that optopt be set to the last character
+       that caused an error.
+
+HISTORY
+       The getopt() function first appeared in AT&T System III  UNIX  and  was
+       reimplemented for 4.3BSD.
+
+BUGS
+       The  getopt()  function was once specified to return EOF instead of -1.
+       This was changed  by  IEEE  Std  1003.2-1992  (“POSIX.2”)  to  decouple
+       getopt() from <stdio.h>.
+
+       It  is  possible  to  handle  digits  as  option  letters.  This allows
+       getopt() to be used with programs that expect a number (“-3”) as an op‐
+       tion.  This practice is wrong, and should not be used  in  any  current
+       development.  It is provided for backward compatibility only.  The fol‐
+       lowing  code  fragment  works in most cases and can handle mixed number
+       and letter arguments.
+
+             int aflag = 0, bflag = 0, ch, lastch = '\0';
+             int length = -1, newarg = 1, prevoptind = 1;
+
+             while ((ch = getopt(argc, argv, "0123456789ab")) != -1) {
+                     switch (ch) {
+                     case '0': case '1': case '2': case '3': case '4':
+                     case '5': case '6': case '7': case '8': case '9':
+                             if (newarg || !isdigit(lastch))
+                                     length = 0;
+                             else if (length > INT_MAX / 10)
+                                     usage();
+                             length = (length * 10) + (ch - '0');
+                             break;
+                     case 'a':
+                             aflag = 1;
+                             break;
+                     case 'b':
+                             bflag = 1;
+                             break;
+                     default:
+                             usage();
+                     }
+                     lastch = ch;
+                     newarg = optind != prevoptind;
+                     prevoptind = optind;
+             }
+
+OpenBSD 7.5                      July 25, 2022                       GETOPT(3)
+
