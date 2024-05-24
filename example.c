@@ -136,16 +136,16 @@ int _tmain(int argc, TCHAR **argv)
             break;
 
         /* getopt printed an error message */
-		case _T('?'):
+        case _T('?'):
             /* we cannot use '?' as a valid option but
              * we can at least print a hint */
             if (optopt == _T('?')) {
                 puts("Did you mean `--help' ?");
             }
-			return 1;
+            return 1;
 
         default:
-			printf("error: getopt returned unknown code: 0x%x\n", c);
+            printf("error: getopt returned unknown code: 0x%x\n", c);
             return 1;
         }
     }
