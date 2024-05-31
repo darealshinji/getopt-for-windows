@@ -22,65 +22,16 @@
  * THE SOFTWARE
  */
 
-#include <io.h>
-#include <fcntl.h>
 #include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 #include <tchar.h>
 #include <wchar.h>
 #include <windows.h>
 #include "getopt.c"
 
-
 #ifdef _UNICODE
-
-/* using wide char API, set output mode to _O_U16TEXT and print */
-static void print_as_u16(const wchar_t *fmt, const wchar_t *arg)
-{
-    int oldmode = _setmode(_fileno(stdout), _O_U16TEXT);
-    wprintf(fmt, arg);
-    _setmode(_fileno(stdout), oldmode);
-}
-
+#define _TS "%ls"
 #else
-
-static wchar_t *convert_str_to_wcs(const char *str)
-{
-    size_t len, n;
-    wchar_t *buf;
-
-    if (!str) return NULL;
-
-    if (mbstowcs_s(&len, NULL, 0, str, 0) != 0 || len == 0) {
-        return NULL;
-    }
-
-    buf = malloc((len + 1) * sizeof(wchar_t));
-    if (!buf) return NULL;
-
-    if (mbstowcs_s(&n, buf, len+1, str, len) != 0 || n == 0) {
-        free(buf);
-        return NULL;
-    }
-
-    buf[len] = '\0';
-
-    return buf;
-}
-
-/* convert char string to wchar_t, set output mode to _O_U16TEXT and print */
-static void print_as_u16(const wchar_t *fmt, const char *arg)
-{
-    int oldmode = _setmode(_fileno(stdout), _O_U16TEXT);
-
-    wchar_t *wstr = convert_str_to_wcs(arg);
-    wprintf(fmt, wstr);
-    free(wstr);
-
-    _setmode(_fileno(stdout), oldmode);
-}
-
+#define _TS "%s"
 #endif
 
 
@@ -96,11 +47,8 @@ int _tmain(int argc, TCHAR **argv)
         { NULL,          0,                 0,      0   }
     };
 
-    if (sizeof(TCHAR) > 1) {
-        puts("wide characters API");
-    } else {
-        puts("narrow characters API");
-    }
+    _tprintf(_T(_TS " characters API\n"),
+        (sizeof(TCHAR) > 1) ? _T("wide") : _T("narrow"));
 
     while (1)
     {
@@ -116,23 +64,22 @@ int _tmain(int argc, TCHAR **argv)
         {
         /* print help */
         case _T('h'):
-            puts("options: -h -i<file> -f -b");
+            _tprintf(_T("options: -h -i<file> -f -b\n"));
             return 0;
 
         /* flag */
         case _T('f'):
-            puts("foo");
+            _tprintf(_T("foo\n"));
             break;
 
         /* flag */
         case _T('b'):
-            puts("bar");
+            _tprintf(_T("bar\n"));
             break;
 
-        /* option with an argument;
-         * print as UTF-16 to not mess up multibyte characters */
+        /* option with an argument */
         case _T('i'):
-            print_as_u16(L"input: %ls\n", _toptarg);
+            _tprintf(_T("input: " _TS "\n"), _toptarg);
             break;
 
         /* getopt printed an error message */
@@ -140,17 +87,15 @@ int _tmain(int argc, TCHAR **argv)
             /* we cannot use '?' as a valid option but
              * we can at least print a hint */
             if (optopt == _T('?')) {
-                puts("Did you mean `--help' ?");
+                _tprintf(_T("Did you mean `--help' ?\n"));
             }
             return 1;
 
         default:
-            printf("error: getopt returned unknown code: 0x%x\n", c);
+            _tprintf(_T("error: getopt returned unknown code: 0x%x\n"), c);
             return 1;
         }
     }
-
-    puts("exit 0");
 
     return 0;
 }
