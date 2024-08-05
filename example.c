@@ -35,6 +35,11 @@
 #endif
 
 
+void print_help()
+{
+    _tprintf(_T("options:\n  -? -h\n  -i<file> -f -b\n"));
+}
+
 int _tmain(int argc, TCHAR **argv)
 {
     int option_index = 0;
@@ -52,9 +57,11 @@ int _tmain(int argc, TCHAR **argv)
 
     while (1)
     {
-        /* short options are "hi:fb";
-         * the colon after "i" means it requires an argument */
-        int c = _tgetopt_long(argc, argv, _T("hi:fb"), long_options, &option_index);
+        /**
+         * colon after "i" in short options list means it requires an argument;
+         * '?' is listed as a valid option, we use optopt to distinguish it from an error
+         */
+        int c = _tgetopt_long(argc, argv, _T("?hi:fb"), long_options, &option_index);
 
         if (c == -1) {
             break;
@@ -64,7 +71,7 @@ int _tmain(int argc, TCHAR **argv)
         {
         /* print help */
         case _T('h'):
-            _tprintf(_T("options: -h -i<file> -f -b\n"));
+            print_help();
             return 0;
 
         /* flag */
@@ -84,10 +91,11 @@ int _tmain(int argc, TCHAR **argv)
 
         /* getopt printed an error message */
         case _T('?'):
-            /* we cannot use '?' as a valid option but
-             * we can at least print a hint */
             if (optopt == _T('?')) {
-                _tprintf(_T("Did you mean `--help' ?\n"));
+                /* since '?' is among the short options there is no error
+                 * message and '-?' can be treated as a valid option */
+                print_help();
+                return 0;
             }
             return 1;
 
