@@ -86,7 +86,7 @@ static int parse_long_options(TCHAR * const *, const TCHAR *,
 static int gcd(int, int);
 static void permute_args(int, int, int, TCHAR * const *);
 static void xwarnx(const TCHAR *fmt, ...);
-static char *xgetenv(const char *name);
+static int envset(const char *name);
 
 static TCHAR *place = EMSG; /* option letter processing */
 
@@ -116,18 +116,17 @@ xwarnx(const TCHAR *fmt, ...)
     va_end(ap);
 }
 
-static char *
-xgetenv(const char *name)
+static int
+envset(const char *name)
 {
 #ifdef _MSC_VER
-    char *env;
-    size_t len;
+    size_t len = 0;
 
-    if (_dupenv_s(&env, &len, name) != 0)
-        return NULL;
-    return env;
+    getenv_s(&len, NULL, 0, name);
+
+    return (len == 0) ? -1 : 0;
 #else
-    return getenv(name);
+    return (getenv(name) == NULL) ? -1 : 0;
 #endif
 }
 
@@ -337,10 +336,10 @@ getopt_internal(int nargc, TCHAR * const *nargv, const TCHAR *options,
      * string begins with a '+'.
      */
     if (posixly_correct == -1 || optreset)
-        posixly_correct = (xgetenv("POSIXLY_CORRECT") != NULL);
+        posixly_correct = envset("POSIXLY_CORRECT");
     if (*options == _T('-'))
         flags |= FLAG_ALLARGS;
-    else if (posixly_correct || *options == _T('+'))
+    else if (posixly_correct != -1 || *options == _T('+'))
         flags &= ~FLAG_PERMUTE;
     if (*options == _T('+') || *options == _T('-'))
         options++;
